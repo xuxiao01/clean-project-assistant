@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>清洁项目助手 Demo</title>
+</head>
+<body>
+  <h1>清洁项目助手</h1>
+  <p>
+    <label for="question">问题</label><br />
+    <input id="question" type="text" size="50" placeholder="输入问题" />
+  </p>
+  <p>
+    <button id="send" type="button">发送</button>
+  </p>
+  <p>回答：</p>
+  <pre id="result" style="white-space: pre-wrap; border: 1px solid #ccc; padding: 8px; min-height: 2em;"></pre>
+
+  <script>
+    const questionEl = document.getElementById('question');
+    const resultEl = document.getElementById('result');
+    const sendBtn = document.getElementById('send');
+
+    async function send() {
+      const question = (questionEl.value || '').trim();
+      resultEl.textContent = '请求中…';
+      sendBtn.disabled = true;
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question }),
+        });
+        const data = await res.json().catch(function () {
+          return { _parseError: true };
+        });
+        if (data._parseError) {
+          resultEl.textContent = '响应不是合法 JSON，HTTP ' + res.status;
+          return;
+        }
+        if (res.ok && data.success && data.data && typeof data.data.answer === 'string') {
+          resultEl.textContent = data.data.answer;
+        } else if (data.error && data.error.message) {
+          resultEl.textContent = '错误：' + data.error.message + '（HTTP ' + res.status + '）';
+        } else {
+          resultEl.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (e) {
+        resultEl.textContent = '网络错误：' + (e && e.message ? e.message : String(e));
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener('click', send);
+    questionEl.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') send();
+    });
+  </script>
+</body>
+</html>
