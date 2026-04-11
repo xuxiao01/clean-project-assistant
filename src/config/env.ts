@@ -23,8 +23,19 @@ function parsePort(raw: string | undefined): number {
   return port;
 }
 
-/** 启动时加载；缺少 GEMINI_API_KEY 或非空校验失败会抛错 */
+function optionalNonEmpty(raw: string | undefined): string | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const t = raw.trim();
+  return t.length > 0 ? t : undefined;
+}
+
+/** 启动时加载；缺少必填变量时会抛错 */
 export const env = {
   port: parsePort(process.env.PORT),
-  geminiApiKey: requireNonEmpty('GEMINI_API_KEY'),
+  /** 智谱 AI API Key（必填，见 https://open.bigmodel.cn） */
+  zhipuApiKey: requireNonEmpty('ZHIPU_API_KEY'),
+  /** 智谱模型 id，可通过 ZHIPU_MODEL 覆盖 */
+  zhipuModel: optionalNonEmpty(process.env.ZHIPU_MODEL) ?? 'glm-4-flash-250414',
 } as const;
