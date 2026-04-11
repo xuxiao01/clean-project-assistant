@@ -4,50 +4,334 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>清洁项目助手 Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #eef1f6;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #0f766e;
+      --accent-hover: #0d9488;
+      --accent-muted: rgba(15, 118, 110, 0.1);
+      --danger: #b91c1c;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans SC", system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(15, 118, 110, 0.12), transparent);
+    }
+
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    .header {
+      margin-bottom: 1.75rem;
+    }
+
+    .header h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.65rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .card--input {
+      padding-bottom: 1.1rem;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .input {
+      flex: 1 1 200px;
+      min-width: 0;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font: inherit;
+      color: var(--text);
+      background: #fafbfc;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    .input:hover {
+      border-color: #cbd5e1;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px var(--accent-muted);
+    }
+
+    .input::placeholder {
+      color: #94a3b8;
+    }
+
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .section-title {
+      margin: 0 0 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+    }
+
+    .answer-box {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 2.5rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    .answer-box.is-error {
+      color: var(--danger);
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .refs-box {
+      min-height: 2.5rem;
+    }
+
+    .refs-empty {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .ref-item + .ref-item {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--border);
+    }
+
+    .ref-item__title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .ref-item__title span.score {
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .ref-item__body {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: #475569;
+      padding: 0.65rem 0.75rem;
+      border-radius: 6px;
+      background: #f1f5f9;
+    }
+  </style>
 </head>
 <body>
-  <h1>清洁项目助手</h1>
-  <p>
-    <label for="question">问题</label><br />
-    <input id="question" type="text" size="50" placeholder="输入问题" />
-  </p>
-  <p>
-    <button id="send" type="button">发送</button>
-  </p>
-  <p>回答：</p>
-  <pre id="result" style="white-space: pre-wrap; border: 1px solid #ccc; padding: 8px; min-height: 2em;"></pre>
+  <div class="page">
+    <header class="header">
+      <h1>清洁项目助手</h1>
+      <p class="subtitle">基于项目知识库的问答 · RAG Demo</p>
+    </header>
+
+    <main>
+      <section class="card card--input" aria-label="提问">
+        <label class="field-label" for="question">问题</label>
+        <div class="input-row">
+          <input
+            id="question"
+            class="input"
+            type="text"
+            placeholder="例如：清洁工在哪里查看可接订单？"
+            autocomplete="off"
+          />
+          <button id="send" class="btn" type="button">发送</button>
+        </div>
+      </section>
+
+      <section class="card" aria-label="模型回答">
+        <h2 class="section-title">回答</h2>
+        <pre id="answer" class="answer-box"></pre>
+      </section>
+
+      <section class="card" aria-label="检索参考">
+        <h2 class="section-title">参考片段（检索命中）</h2>
+        <div id="refs" class="refs-box"></div>
+      </section>
+    </main>
+  </div>
 
   <script>
     const questionEl = document.getElementById('question');
-    const resultEl = document.getElementById('result');
+    const answerEl = document.getElementById('answer');
+    const refsEl = document.getElementById('refs');
     const sendBtn = document.getElementById('send');
 
+    function summarize(text, maxLen) {
+      var t = String(text || '').replace(/\s+/g, ' ').trim();
+      if (t.length <= maxLen) return t;
+      return t.slice(0, maxLen) + '…';
+    }
+
+    function renderReferences(refs) {
+      refsEl.textContent = '';
+      if (!Array.isArray(refs) || refs.length === 0) {
+        var empty = document.createElement('p');
+        empty.className = 'refs-empty';
+        empty.textContent = '（本次未返回参考片段，可能知识库为空或未命中。）';
+        refsEl.appendChild(empty);
+        return;
+      }
+      for (var i = 0; i < refs.length; i++) {
+        var ref = refs[i];
+        var wrap = document.createElement('div');
+        wrap.className = 'ref-item';
+
+        var title = document.createElement('div');
+        title.className = 'ref-item__title';
+        var idPart = ref && ref.id != null ? String(ref.id) : '(无 id)';
+        var prefix = '片段 ' + (i + 1) + ' — ' + idPart;
+        if (ref && ref.score != null && typeof ref.score === 'number' && isFinite(ref.score)) {
+          title.appendChild(document.createTextNode(prefix + ' · 相似度 '));
+          var scoreSpan = document.createElement('span');
+          scoreSpan.className = 'score';
+          scoreSpan.textContent = ref.score.toFixed(4);
+          title.appendChild(scoreSpan);
+        } else {
+          title.textContent = prefix;
+        }
+
+        var body = document.createElement('pre');
+        body.className = 'ref-item__body';
+        body.textContent = summarize(ref && ref.content, 400);
+
+        wrap.appendChild(title);
+        wrap.appendChild(body);
+        refsEl.appendChild(wrap);
+      }
+    }
+
+    function setAnswer(text, isError) {
+      answerEl.textContent = text;
+      answerEl.classList.toggle('is-error', !!isError);
+    }
+
     async function send() {
-      const question = (questionEl.value || '').trim();
-      resultEl.textContent = '请求中…';
+      var question = (questionEl.value || '').trim();
+      setAnswer('请求中…', false);
+      refsEl.textContent = '';
       sendBtn.disabled = true;
       try {
-        const res = await fetch('/api/chat', {
+        var res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question }),
         });
-        const data = await res.json().catch(function () {
+        var data = await res.json().catch(function () {
           return { _parseError: true };
         });
         if (data._parseError) {
-          resultEl.textContent = '响应不是合法 JSON，HTTP ' + res.status;
+          setAnswer('响应不是合法 JSON，HTTP ' + res.status, true);
+          refsEl.textContent = '';
           return;
         }
         if (res.ok && data.success && data.data && typeof data.data.answer === 'string') {
-          resultEl.textContent = data.data.answer;
+          setAnswer(data.data.answer, false);
+          renderReferences(data.data.references);
         } else if (data.error && data.error.message) {
-          resultEl.textContent = '错误：' + data.error.message + '（HTTP ' + res.status + '）';
+          setAnswer('错误：' + data.error.message + '（HTTP ' + res.status + '）', true);
+          refsEl.textContent = '';
         } else {
-          resultEl.textContent = JSON.stringify(data, null, 2);
+          setAnswer(JSON.stringify(data, null, 2), true);
+          refsEl.textContent = '';
         }
       } catch (e) {
-        resultEl.textContent = '网络错误：' + (e && e.message ? e.message : String(e));
+        setAnswer('网络错误：' + (e && e.message ? e.message : String(e)), true);
+        refsEl.textContent = '';
       } finally {
         sendBtn.disabled = false;
       }
