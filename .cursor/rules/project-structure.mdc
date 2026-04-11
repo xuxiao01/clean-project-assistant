@@ -1,0 +1,32 @@
+---
+description: 目录职责分层（routes/services/loaders 等，禁止单文件堆逻辑）
+alwaysApply: true
+---
+
+# 项目结构（按目录职责编写）
+
+实现时 **严格按分层放代码**，不要把多种职责塞进一个文件。
+
+| 目录 / 层 | 职责 |
+|-----------|------|
+| `routes` | **仅** HTTP 参数解析、校验入口、调用 service、**返回响应** |
+| `services` | **业务编排**：组合 loaders、splitters、stores、外部调用 |
+| `loaders` | **文档 / 资源读取**（文件、解析入口） |
+| `splitters` | **文本切分**策略与实现 |
+| `stores` | **向量存储**（写入、查询、删除等与向量库交互） |
+| `types` | **公共** TypeScript `interface` / `type` |
+
+## 禁止
+
+- `server.ts` 膨胀到数百行「什么都有」。
+- `chat.ts`（或任一路由文件）里同时做：读文件、切分、调模型、写库。
+- 「改一点逻辑牵一大片」—— 说明职责未分层，应拆到对应目录。
+
+## 示例
+
+```typescript
+// ❌ BAD：路由里直接读盘、切分、写向量库
+// app.post('/ingest', async (req, res) => { readFile; split; embed; ... })
+
+// ✅ GOOD：route -> ingestService -> loaders / splitters / stores
+```

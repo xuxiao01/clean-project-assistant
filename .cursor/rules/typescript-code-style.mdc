@@ -1,0 +1,36 @@
+---
+description: TypeScript 与代码风格（避免 any、显式错误、单一职责）
+alwaysApply: true
+---
+
+# TypeScript 与代码风格
+
+## 类型
+
+- **尽量不要**使用 `any`；必要时用 `unknown` 再收窄，或定义具体类型。
+- **公共**数据结构放在 `types`（或共享模块），用 `interface` / `type` 表达。
+
+## 函数与抽象
+
+- 函数 **职责单一**，命名 **清晰**（动词短语、见名知意）。
+- **不要**为了 demo 或「预留扩展」叠过多抽象层（过度工厂/策略接口等）；够用即可。
+
+## 错误处理
+
+- 错误要 **显式**：记录或向上抛出，**不要**空 `catch`、`catch` 后静默忽略。
+- 异步失败要有可观测路径（日志、错误类型、HTTP 状态与消息）。
+
+## 示例
+
+```typescript
+// ❌ BAD
+try { await job(); } catch (e) {}
+
+// ✅ GOOD
+try {
+  await job();
+} catch (e) {
+  logger.error('job failed', { error: e });
+  throw new JobError('ingest failed', { cause: e });
+}
+```

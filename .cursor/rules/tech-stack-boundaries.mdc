@@ -1,0 +1,31 @@
+---
+description: 技术栈与输出边界（Node/TS/Express/ESM，禁止擅自换栈）
+alwaysApply: true
+---
+
+# 技术栈与输出边界
+
+## 后端
+
+- 统一使用 **Node.js + TypeScript + Express**。
+- 使用 **ESM**（`import`/`export`、`"type": "module"` 或等价配置），不要用 CommonJS 作为默认风格。
+- **不要随意**引入与当前方案无关的框架或运行时依赖。
+
+## 禁止擅自替换
+
+- **不要**把后端改成 NestJS、Fastify、Python 等其它栈。
+- **不要**为了「更现代」擅自引入 Next.js 或其它全栈框架，除非需求明确要求。
+
+## 前端
+
+- 页面保持 **最小化**：够用即可，**不要**过度封装 UI 组件库式抽象。
+- 不要为了展示而堆叠设计系统，除非产品明确要求。
+
+## 示例
+
+```typescript
+// ❌ BAD：无需求时换栈或加框架
+// 引入 Fastify、把 Express 全项目替换为 Nest 等
+
+// ✅ GOOD：在 Express 路由内调用现有 service，依赖与方案一致
+```
