@@ -1,6 +1,9 @@
 import { embedText } from '../embeddings/embedder.js';
 import { getVectorStore } from '../stores/vectorStore.js';
 
+/** RAG 默认取回片段数（路由与后续配置可共用） */
+export const RAG_DEFAULT_TOP_K = 5;
+
 /** 检索命中的一条 chunk（不含 embedding，便于日志与下游 prompt 组装） */
 export interface RetrievalChunk {
   id: string;
