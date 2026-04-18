@@ -2,7 +2,8 @@ import { env } from '../config/env.js';
 
 const ZHIPU_EMBEDDINGS_URL = 'https://open.bigmodel.cn/api/paas/v4/embeddings';
 
-function embeddingModelFromEnv(): string {
+/** 与写入 `knowledge_chunks.embedding_model` 的取值保持一致 */
+export function getEmbeddingModelId(): string {
   const m = process.env.ZHIPU_EMBEDDING_MODEL?.trim();
   return m !== undefined && m.length > 0 ? m : 'embedding-2';
 }
@@ -80,7 +81,7 @@ export async function embedText(text: string): Promise<number[]> {
     throw new EmbeddingError('嵌入文本不能为空');
   }
 
-  const model = embeddingModelFromEnv();
+  const model = getEmbeddingModelId();
 
   let res: Response;
   try {

@@ -1,5 +1,6 @@
-import { embedText } from '../embeddings/embedder.js';
-import { getVectorStore } from '../stores/vectorStore.js';
+import { embedText, getEmbeddingModelId } from '../embeddings/embedder.js';
+import { getPool } from '../lib/db.js';
+import { searchChunksByEmbedding } from '../repositories/knowledgeChunksRepository.js';
 
 /** RAG 默认取回片段数（路由与后续配置可共用） */
 export const RAG_DEFAULT_TOP_K = 5;
@@ -14,7 +15,7 @@ export interface RetrievalChunk {
 }
 
 /**
- * 对用户问题做 embedding，在内存向量库中按余弦相似度取 Top-K。
+ * 对用户问题做 embedding，在 PostgreSQL(pgvector) 中按余弦相似度取 Top-K。
  *
  * @example 调试（需已启动灌库，且配置了 ZHIPU_API_KEY）
  * ```ts
@@ -37,12 +38,11 @@ export async function retrieveTopKChunks(
   }
 
   const queryEmbedding = await embedText(q);
-  const hits = getVectorStore().search(queryEmbedding, topK);
-
-  return hits.map((h) => ({
-    id: h.record.id,
-    content: h.record.content,
-    metadata: h.record.metadata,
-    score: h.score,
-  }));
+  const pool = getPool();
+  return searchChunksByEmbedding(
+    pool,
+    queryEmbedding,
+    topK,
+    getEmbeddingModelId(),
+  );
 }
