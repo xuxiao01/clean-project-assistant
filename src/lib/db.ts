@@ -1,24 +1,14 @@
-import { config } from 'dotenv';
 import { Pool } from 'pg';
-
-config();
+import { env } from '../config/env.js';
 
 let pool: Pool | undefined;
 
-function requireDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL?.trim();
-  if (url === undefined || url.length === 0) {
-    throw new Error('缺少环境变量 DATABASE_URL');
-  }
-  return url;
-}
-
 /**
- * 复用的连接池；首次调用时从 `process.env.DATABASE_URL` 创建。
+ * 复用的连接池；首次调用时从 `env.databaseUrl` 创建。
  */
 export function getPool(): Pool {
   if (pool === undefined) {
-    pool = new Pool({ connectionString: requireDatabaseUrl() });
+    pool = new Pool({ connectionString: env.databaseUrl });
   }
   return pool;
 }

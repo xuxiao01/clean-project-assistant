@@ -2,9 +2,7 @@ import { embedText, getEmbeddingModelId } from '../embeddings/embedder.js';
 import { sha256Hex } from '../lib/hash.js';
 import { loadProjectKnowledge } from '../loaders/documentLoader.js';
 import { splitText } from '../splitters/textSplitter.js';
-import { getVectorStore } from '../stores/vectorStore.js';
 import type { KnowledgeChunkInsertRow } from '../types/db.js';
-import type { VectorRecord } from '../types/index.js';
 import { replaceKnowledgeForDocument } from './knowledgeDocumentDbService.js';
 
 /** Demo 用固定参数，后续可由配置或后续模块替换 */
@@ -22,14 +20,9 @@ function extractTitleFromMarkdown(markdown: string): string | null {
   return null;
 }
 
-function isDatabasePersistenceEnabled(): boolean {
-  const url = process.env.DATABASE_URL?.trim();
-  return url !== undefined && url.length > 0;
-}
-
 /**
- * 启动时：加载知识库 Markdown → 切分 → 逐条 embedding → 写入内存向量库；
- * 若配置了 `DATABASE_URL`，则同时写入 PostgreSQL（documents + knowledge_chunks）。
+ * 启动时：加载知识库 Markdown → 切分 → 逐条 embedding → 写入 PostgreSQL（documents + knowledge_chunks）。
+ * 向量检索仅使用数据库，不再使用进程内内存向量库。
  */
 export async function runKnowledgePreprocessOnStartup(): Promise<void> {
   const markdown = await loadProjectKnowledge();
@@ -58,29 +51,18 @@ export async function runKnowledgePreprocessOnStartup(): Promise<void> {
     );
   }
 
-  const store = getVectorStore();
-  store.clear();
-
-  const persistPg = isDatabasePersistenceEnabled();
-  if (!persistPg) {
-    console.log('[knowledge] 未配置 DATABASE_URL，跳过写入 PostgreSQL');
-  }
-
   if (chunks.length === 0) {
-    console.log('[knowledge] 无 chunk，跳过向量化与内存入库');
-    if (persistPg) {
-      await replaceKnowledgeForDocument({
-        source_path: KNOWLEDGE_SOURCE,
-        content_hash: documentContentHash,
-        title,
-        chunks: [],
-      });
-      console.log('[knowledge] 已同步 PostgreSQL（空 chunks）');
-    }
+    console.log('[knowledge] 无 chunk，跳过向量化');
+    await replaceKnowledgeForDocument({
+      source_path: KNOWLEDGE_SOURCE,
+      content_hash: documentContentHash,
+      title,
+      chunks: [],
+    });
+    console.log('[knowledge] 已同步 PostgreSQL（空 chunks）');
     return;
   }
 
-  const records: VectorRecord[] = [];
   const pgRows: KnowledgeChunkInsertRow[] = [];
   let embeddingDim = 0;
   const embeddingModel = getEmbeddingModelId();
@@ -100,49 +82,28 @@ export async function runKnowledgePreprocessOnStartup(): Promise<void> {
       );
     }
 
-    records.push({
-      id: chunk.id,
+    pgRows.push({
+      chunk_index: chunk.chunkIndex,
       content: chunk.content,
+      chunk_content_hash: sha256Hex(chunk.content),
       embedding,
-      metadata: {
-        chunkIndex: chunk.chunkIndex,
-        source: KNOWLEDGE_SOURCE,
-      },
+      embedding_model: embeddingModel,
+      metadata: { ...metadataBase },
     });
-
-    if (persistPg) {
-      pgRows.push({
-        chunk_index: chunk.chunkIndex,
-        content: chunk.content,
-        chunk_content_hash: sha256Hex(chunk.content),
-        embedding,
-        embedding_model: embeddingModel,
-        metadata: { ...metadataBase },
-      });
-    }
   }
 
-  store.addDocuments(records);
+  console.log('[knowledge] 已向量化，条数:', pgRows.length, '，向量维度:', embeddingDim);
 
+  const { documentId } = await replaceKnowledgeForDocument({
+    source_path: KNOWLEDGE_SOURCE,
+    content_hash: documentContentHash,
+    title,
+    chunks: pgRows,
+  });
   console.log(
-    '[knowledge] 已向量化并写入内存向量库，条数:',
-    store.size,
-    '，向量维度:',
-    embeddingDim,
+    '[knowledge] 已写入 PostgreSQL，document_id:',
+    documentId,
+    '，chunks:',
+    pgRows.length,
   );
-
-  if (persistPg) {
-    const { documentId } = await replaceKnowledgeForDocument({
-      source_path: KNOWLEDGE_SOURCE,
-      content_hash: documentContentHash,
-      title,
-      chunks: pgRows,
-    });
-    console.log(
-      '[knowledge] 已写入 PostgreSQL，document_id:',
-      documentId,
-      '，chunks:',
-      pgRows.length,
-    );
-  }
 }

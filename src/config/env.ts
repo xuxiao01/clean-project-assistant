@@ -34,6 +34,8 @@ function optionalNonEmpty(raw: string | undefined): string | undefined {
 /** 启动时加载；缺少必填变量时会抛错 */
 export const env = {
   port: parsePort(process.env.PORT),
+  /** PostgreSQL 连接串（必填；知识灌库与向量检索均依赖数据库） */
+  databaseUrl: requireNonEmpty('DATABASE_URL'),
   /** 智谱 AI API Key（必填，见 https://open.bigmodel.cn） */
   zhipuApiKey: requireNonEmpty('ZHIPU_API_KEY'),
   /** 智谱模型 id，可通过 ZHIPU_MODEL 覆盖 */
