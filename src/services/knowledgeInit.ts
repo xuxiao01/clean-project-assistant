@@ -1,4 +1,8 @@
-import { embedText, getEmbeddingModelId } from '../embeddings/embedder.js';
+import {
+  embedText,
+  getEmbeddingModelId,
+  getEmbeddingProviderId,
+} from '../embeddings/embedder.js';
 import { sha256Hex } from '../lib/hash.js';
 import { loadProjectKnowledge } from '../loaders/documentLoader.js';
 import { splitText } from '../splitters/textSplitter.js';
@@ -66,6 +70,7 @@ export async function runKnowledgePreprocessOnStartup(): Promise<void> {
   const pgRows: KnowledgeChunkInsertRow[] = [];
   let embeddingDim = 0;
   const embeddingModel = getEmbeddingModelId();
+  const embeddingProvider = getEmbeddingProviderId();
 
   const metadataBase = {
     source_path: KNOWLEDGE_SOURCE,
@@ -92,7 +97,16 @@ export async function runKnowledgePreprocessOnStartup(): Promise<void> {
     });
   }
 
-  console.log('[knowledge] 已向量化，条数:', pgRows.length, '，向量维度:', embeddingDim);
+  console.log(
+    '[knowledge] 已向量化，provider:',
+    embeddingProvider,
+    '，model:',
+    embeddingModel,
+    '，条数:',
+    pgRows.length,
+    '，向量维度:',
+    embeddingDim,
+  );
 
   const { documentId } = await replaceKnowledgeForDocument({
     source_path: KNOWLEDGE_SOURCE,

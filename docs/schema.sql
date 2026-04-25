@@ -37,7 +37,8 @@ CREATE TRIGGER documents_updated_at
 
 -- ---------------------------------------------------------------------------
 -- knowledge_chunks：归属文档、顺序唯一、向量与模型标识
--- embedding 维度默认 1024，与智谱 embedding-2 等一致；换模型时需迁移维度
+-- embedding 维度固定 1024。
+-- 工程约束：Gemini 侧通过 outputDimensionality=1024 主动对齐，不在当前阶段修改库表结构。
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS knowledge_chunks (
   id bigserial PRIMARY KEY,

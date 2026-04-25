@@ -17,7 +17,7 @@ export interface RetrievalChunk {
 /**
  * 对用户问题做 embedding，在 PostgreSQL(pgvector) 中按余弦相似度取 Top-K。
  *
- * @example 调试（需已启动灌库，且配置了 ZHIPU_API_KEY）
+ * @example 调试（需已启动灌库，并按 LLM_PROVIDER 配置对应 API Key）
  * ```ts
  * import { retrieveTopKChunks } from './services/retrievalService.js';
  * const hits = await retrieveTopKChunks('清洁工如何接单', 3);

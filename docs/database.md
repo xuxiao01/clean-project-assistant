@@ -19,6 +19,9 @@
 | 变量 | 说明 |
 |------|------|
 | `DATABASE_URL` | PostgreSQL 连接串，例如 `postgresql://用户名@localhost:5432/数据库名`。在 `src/config/env.ts` 中为**必填**，应用启动前即会校验。 |
+| `LLM_PROVIDER` | 单活 provider，`zhipu` 或 `gemini`（默认 `zhipu`）。 |
+| `ZHIPU_API_KEY` | 当 `LLM_PROVIDER=zhipu` 时必填。 |
+| `GEMINI_API_KEY` | 当 `LLM_PROVIDER=gemini` 时必填。 |
 
 `.env.example` 中有占位说明；本地复制为 `.env` 后填写真实连接串。
 
@@ -55,7 +58,7 @@
 | `chunk_index` | `integer` | 片段序号，同一文档内从 0 递增。**与 `document_id` 组成唯一约束**。 |
 | `content` | `text` | 片段正文。 |
 | `chunk_content_hash` | `text` | 片段内容哈希。`NOT NULL`。 |
-| `embedding` | `vector(1024)` | 向量；维度与当前嵌入模型一致（默认智谱 `embedding-2` 为 1024）。 |
+| `embedding` | `vector(1024)` | 向量；当前采用“同维度对齐策略”，Gemini 侧显式 `outputDimensionality=1024`，因此不改库表。 |
 | `embedding_model` | `text` | 与 `getEmbeddingModelId()` 一致，检索时按该字段过滤。 |
 | `metadata` | `jsonb` | 扩展信息（如 `source_path`、`title` 等）。 |
 | `created_at` | `timestamptz` | 插入时间；应用插入语句未显式写列时使用默认值。 |
@@ -81,6 +84,7 @@
 - `documents` 表 + `updated_at` 触发器
 - `knowledge_chunks` 表、外键、`UNIQUE(document_id, chunk_index)`、常用 B-tree 索引
 - 可选的 **IVFFLAT** 向量索引（脚本内注释掉；数据量增大后再按需启用并调 `lists`）
+- Gemini 适配约束注释：embedding 维度由应用侧对齐到 1024，当前阶段不做 DDL 变更
 
 ### 4.1 如何执行
 
@@ -114,6 +118,7 @@ psql "postgresql://用户名@localhost:5432/数据库名" -f docs/schema.sql
 - **度量**：与 pgvector 的 **余弦距离** 一致，查询中使用运算符 **`<=>`**（cosine distance）。
 - **分数**：应用层将距离转为「相似度」时使用 **`1 - distance`**，便于与「越大越相关」的展示一致（具体见 `searchChunksByEmbedding`）。
 - **模型一致**：检索 SQL 会按 **`embedding_model`** 过滤，保证查询向量与库内向量来自同一嵌入模型（见 `getEmbeddingModelId()`）。
+- **单活策略**：当前不做多 provider 同库并存；切换 `LLM_PROVIDER` 后通过重灌库替换向量数据。
 
 向量加速索引见 `docs/schema.sql` 内注释；初版数据量小时全表扫描也可接受。
 
@@ -123,7 +128,7 @@ psql "postgresql://用户名@localhost:5432/数据库名" -f docs/schema.sql
 
 1. 读取 Markdown → 计算文档级 `content_hash`、解析标题等。
 2. 切分为 chunk。
-3. 对每个 chunk 调用智谱嵌入 API 生成向量。
+3. 对每个 chunk 调用当前 provider 的嵌入 API 生成向量（Gemini 强制 1024 维）。
 4. 在事务中：**upsert `documents`** → **删除该文档旧 `knowledge_chunks`** → **批量插入新 chunk**。
 
 无 chunk 时仍会同步文档行并清空该文档下的 chunk（见 `knowledgeInit` 中空列表分支）。
@@ -142,16 +147,21 @@ npm run test-db
 
 ### 8.2 端到端
 
-1. 配置 `.env`（含 `DATABASE_URL`、`ZHIPU_API_KEY` 等）。
-2. `npm run dev`：观察控制台灌库日志。
+1. 配置 `.env`（含 `DATABASE_URL`、`LLM_PROVIDER` 与对应 provider 的 API Key）。
+2. `npm run dev`：观察控制台灌库日志（包含 provider/model/维度）。
 3. 打开前端页面或通过 `POST /api/chat` 提问，确认回答与 `references` 正常。
+4. 回归切换：
+   - `LLM_PROVIDER=zhipu`：灌库+检索回归
+   - `LLM_PROVIDER=gemini`：灌库+检索回归
+   - 验证切换后向量数据已替换为当前 provider 对应模型结果
 
 ---
 
 ## 9. 运维与扩展时注意点
 
 - **更换嵌入模型**：需统一更新嵌入调用与库中 `embedding_model`，旧向量与查询向量模型不一致会导致检索质量下降或需全量重嵌。
-- **向量维度**：`vector(1024)` 需与模型输出一致；变更模型时通常涉及 `ALTER TABLE` 改维度与全量重算 embedding。
+- **向量维度**：当前固定 `vector(1024)`；Gemini 必须显式请求 `outputDimensionality=1024`，禁止默认维度写库。
+- **非目标**：当前阶段不实现多 provider 同库并存、不新增 provider 维度隔离能力、不修改现有数据库 schema。
 - **连接池**：生产环境可再调 `pg` Pool 参数（最大连接数、空闲超时等），当前 Demo 使用默认池配置。
 
 ---
